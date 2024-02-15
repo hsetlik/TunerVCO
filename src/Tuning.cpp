@@ -1,4 +1,7 @@
 #include "Tuning.h"
+#include <Fonts/FreeMonoBold12pt7b.h>
+#include <Fonts/FreeMono12pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
 
 //======================
 EdgeBuffer::EdgeBuffer() : head(0)
@@ -144,13 +147,14 @@ void Tuner::displayTuning(float hz)
     display->clearDisplay();
     auto freqStr = String(hz);
     auto noteStr = stringForNoteName(nearest->name);
-    const int textSize = 4;
+    const int textSize = 2;
     display->setTextSize(textSize);
-    // with the default font each size = 6 px in width and 8 px in height
-    int xOffset = (display->width() / 2) - ((textSize * 6 * noteStr.length()) / 2);
-    display->setCursor(xOffset, 10);
+    //display->se
+    int xOffset = (display->width() / 2) - ((textSize * 12 * noteStr.length()) / 2);
+    display->setCursor(xOffset, (16 * textSize) + 10);
     if(inTune)
     {
+        display->setFont(&FreeSansBold12pt7b);
         //if we're in tune we start on a white background and draw inverse text
         display->fillScreen(SSD1306_WHITE);
         display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
@@ -158,6 +162,7 @@ void Tuner::displayTuning(float hz)
     }
     else
     {
+        display->setFont(&FreeSansBold12pt7b);
         display->setTextColor(SSD1306_WHITE);
         display->println(noteStr);
         //now draw the graphic bar to indicate how out of tune we are
