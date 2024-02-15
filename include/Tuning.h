@@ -14,10 +14,10 @@
 #define OLED_ADDR 0x3C
 #define OLED_RESET -1
 
-#define FRAME_INTERVAL 30 // length of time between screen updates in ms
-#define RING_BUFFER_SIZE 50 // how many rising edges we keep track of
+#define FRAME_INTERVAL 80 // length of time between screen updates in ms
+#define RING_BUFFER_SIZE 200 // how many rising edges we keep track of
 
-#define TOLERANCE_CENTS 5
+#define TOLERANCE_CENTS 7 
 
 //=================================================
 #define NUM_NOTES 128
@@ -78,6 +78,7 @@ private:
     EdgeBuffer buf;
     bool prevLevel;
     unsigned long prevUpdateMs;
+    unsigned long prevFrameLength;
     Adafruit_SSD1306* display;
     //keep track of the pitches for each midi note, calculate this in init
     Note allNotes[NUM_NOTES];
@@ -95,4 +96,5 @@ public:
     ~Tuner();
     void init();
     void tick();
+    void triggerRisingEdge();
 };

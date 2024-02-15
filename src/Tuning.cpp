@@ -48,8 +48,16 @@ String Tuner::stringForNoteName(NoteName n)
     };
     return noteNames[(int)n];
 }
+
+void Tuner::triggerRisingEdge()
+{
+    buf.push(micros());
+}
+
 void Tuner::init()
 {
+    Serial.begin(9600);
+    pinMode(TUNE_PIN, INPUT);
     //initialize the display
     display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
     if(!display->begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
@@ -64,21 +72,17 @@ void Tuner::init()
         note.name = (NoteName)(i % 12);
         note.midiNum = i;
     }
+
 }
 
 void Tuner::tick()
 {
     //step 1: check for new rising edges
-    bool currentLevel = digitalRead(TUNE_PIN);
-    if(currentLevel && !prevLevel) // check for the rising edge
-    {
-        buf.push(micros());
-    }
     unsigned long now = millis();
-    prevLevel = currentLevel;
     //step 2: update the screen if needed
     if(now - prevUpdateMs > FRAME_INTERVAL)
     {
+        prevFrameLength = now - prevUpdateMs;
         prevUpdateMs = now;
         float pitch = currentPitchHz();
         displayTuning(pitch);
@@ -106,7 +110,6 @@ Note* Tuner::nearestNote(float hz)
             return &allNotes[i - 1];
         prevDistance = currentDistance;    
     }
-    Serial.println("No note found!! Shouldn't be getting here!!");
     return &allNotes[0];
 }
 
@@ -126,7 +129,7 @@ int Tuner::tuningErrorCents(Note* target, float hz)
         Note* lower = &allNotes[lowerNote];
         float semitoneHz = target->pitch - lower->pitch;
         float fError = semitoneHz / (target->pitch - hz);
-        return (int)fError * -100.0f;
+        return (int)fError * -100.0f; //flipping the sign here so we can draw the tuning bar the right direction
     }
     return 0;
 }
@@ -134,14 +137,14 @@ int Tuner::tuningErrorCents(Note* target, float hz)
 
 void Tuner::displayTuning(float hz)
 {
-    //step 1: grip the info we need to display
+    //step 1: grip the info for the display
     Note* nearest = nearestNote(hz);
     int tuningError = tuningErrorCents(nearest, hz);
     const bool inTune = std::abs(tuningError) <= TOLERANCE_CENTS;
     //step 2: update the display
     display->clearDisplay();
-    auto str = stringForNoteName(nearest->name);
-    display->setTextSize(4);
+    auto str = String(hz);
+    display->setTextSize(3);
     display->setCursor(0, 0);
     if(inTune)
     {
@@ -149,6 +152,8 @@ void Tuner::displayTuning(float hz)
         display->fillScreen(SSD1306_WHITE);
         display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
         display->println(str);
+        display->setTextSize(2);
+        display->println(String(prevFrameLength) + "ms");
     }
     else
     {
@@ -156,7 +161,6 @@ void Tuner::displayTuning(float hz)
         display->println(str);
         //now draw the graphic bar to indicate how out of tune we are
         float fBarLength = (float)std::abs(tuningError) / 100.0f;
-
         const int16_t barHeight = 8;
         int16_t x; 
         int16_t y = display->height() - barHeight;
@@ -168,6 +172,8 @@ void Tuner::displayTuning(float hz)
         else
             x = center - w;
         display->fillRect(x, y, w, h, SSD1306_WHITE);
+        display->setTextSize(2);
+        display->println(String(prevFrameLength) + "ms");
     }
     display->display();
 }
