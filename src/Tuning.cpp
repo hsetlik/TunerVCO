@@ -1,6 +1,5 @@
 #include "Tuning.h"
 #include <Fonts/FreeMonoBold12pt7b.h>
-#include <Fonts/FreeMono12pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 
 //======================
@@ -80,9 +79,7 @@ void Tuner::init()
 
 void Tuner::tick()
 {
-    //step 1: check for new rising edges
     unsigned long now = millis();
-    //step 2: update the screen if needed
     if(now - prevUpdateMs > FRAME_INTERVAL)
     {
         prevUpdateMs = now;
@@ -117,7 +114,7 @@ Note* Tuner::nearestNote(float hz)
 
 int Tuner::tuningErrorCents(Note* target, float hz)
 {
-    if (hz > target->pitch) // if we're sharp
+    if (hz > target->pitch) // if it's sharp
     {
         int higherNote = std::min({target->midiNum + 1, NUM_NOTES - 1});
         Note* upper = &allNotes[higherNote];
@@ -125,7 +122,7 @@ int Tuner::tuningErrorCents(Note* target, float hz)
         float fError = (hz - target->pitch) / semitoneHz;
         return (int)(fError * 100.0f);
     }
-    else if(hz < target->pitch) // if we're flat
+    else if(hz < target->pitch) // if it's flat
     {
         int lowerNote = std::max({target->midiNum - 1, 0});
         Note* lower = &allNotes[lowerNote];
@@ -145,16 +142,14 @@ void Tuner::displayTuning(float hz)
     const bool inTune = std::abs(tuningError) <= TOLERANCE_CENTS;
     //step 2: update the display
     display->clearDisplay();
-    auto freqStr = String(hz);
     auto noteStr = stringForNoteName(nearest->name);
     const int textSize = 2;
     display->setTextSize(textSize);
-    //display->se
     int xOffset = (display->width() / 2) - ((textSize * 12 * noteStr.length()) / 2);
     display->setCursor(xOffset, (16 * textSize) + 10);
+    display->setFont(&FreeSansBold12pt7b);
     if(inTune)
     {
-        display->setFont(&FreeSansBold12pt7b);
         //if we're in tune we start on a white background and draw inverse text
         display->fillScreen(SSD1306_WHITE);
         display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
@@ -162,7 +157,6 @@ void Tuner::displayTuning(float hz)
     }
     else
     {
-        display->setFont(&FreeSansBold12pt7b);
         display->setTextColor(SSD1306_WHITE);
         display->println(noteStr);
         //now draw the graphic bar to indicate how out of tune we are

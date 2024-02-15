@@ -1,0 +1,61 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid 0e164394-8cbd-45cb-b1b7-dfc88481bf88)
+
+  (paper "A4")
+
+  (title_block
+    (title "ESP-3340 Tuner VCO")
+    (date "2024-02-15")
+    (rev "1")
+    (company "Hayden Setlik")
+  )
+
+  (lib_symbols
+  )
+
+
+  (text "This design is divided into 2 boards:\n- The control board holds pots, jacks, LEDs, etc\n- The 'brain' board contains the microcontroller,\n  the AS3340 oscillator circuit, and the power connector.\nThe brain board atttaches perpendicular to the control board \nwith right angle header pins."
+    (at 108.585 71.755 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid 389e3755-9006-462a-bbab-6e5535ef5d61)
+  )
+
+  (sheet (at 141.605 82.55) (size 30.48 19.05) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid d2d92062-4816-4842-bfd8-c7c0f440db76)
+    (property "Sheetname" "BrainBoard" (at 141.605 81.8384 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "BrainBoard.kicad_sch" (at 141.605 102.1846 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "TunerVCO"
+        (path "/0e164394-8cbd-45cb-b1b7-dfc88481bf88" (page "3"))
+      )
+    )
+  )
+
+  (sheet (at 108.585 82.55) (size 26.67 19.05) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid f1948b8a-9869-4cb6-9322-66dddfdcab03)
+    (property "Sheetname" "ControlBoard" (at 108.585 81.8384 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "ControlBoard.kicad_sch" (at 108.585 102.1846 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "TunerVCO"
+        (path "/0e164394-8cbd-45cb-b1b7-dfc88481bf88" (page "2"))
+      )
+    )
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)

@@ -11,13 +11,13 @@
 // stuff for the display
 #define SCREEN_WIDTH 128 // OLED display width
 #define SCREEN_HEIGHT 64 // OLED display height
-#define OLED_ADDR 0x3C
+#define OLED_ADDR 0x3C //I2C address
 #define OLED_RESET -1
 
 #define FRAME_INTERVAL 30 // length of time between screen updates in ms
 #define RING_BUFFER_SIZE 256 // how many rising edges we keep track of
 
-#define TOLERANCE_CENTS 5 
+#define TOLERANCE_CENTS 5 // how close we have to be to the fundamental to count as "in tune" 
 
 #define NUM_NOTES 128
 #define SEMITONE_RATIO 1.05946309436f
@@ -38,22 +38,6 @@ enum NoteName
  B
 };
 
-const String noteNameStrings[] = 
-{
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B"
-};
-
 struct Note
 {
     NoteName name;
@@ -61,6 +45,7 @@ struct Note
     float pitch;
 };
 //=================================================
+// just a basic one-sided ring buffer to help us keep a running average of the distance between rising edges
 class EdgeBuffer
 {
 private:
@@ -83,7 +68,7 @@ private:
     Note allNotes[NUM_NOTES];
     //calculate the nearest note to the given pitch, determine how in-tune we are from there
     Note* nearestNote(float hz);
-    //determine how out-of-tune we are
+    //determine how out of tune we are
     int tuningErrorCents(Note* target, float hz);
     //this goes through our EdgeBuffer and calculates the VCO's current pitch
     float currentPitchHz();
@@ -95,5 +80,6 @@ public:
     ~Tuner();
     void init();
     void tick();
+    //this just pushes the current time into the EdgeBuffer, it should be connected to an interrupt on the tuning pin in main.cpp
     void triggerRisingEdge();
 };
