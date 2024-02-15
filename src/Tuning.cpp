@@ -142,10 +142,11 @@ void Tuner::displayTuning(float hz)
     const bool inTune = std::abs(tuningError) <= TOLERANCE_CENTS;
     //step 2: update the display
     display->clearDisplay();
-    auto noteStr = stringForNoteName(nearest->name);
+    String noteStr = stringForNoteName(nearest->name);
+    String hzString = String(hz).substring(0, 5) + "Hz";
     const int textSize = 2;
     display->setTextSize(textSize);
-    int xOffset = (display->width() / 2) - ((textSize * 12 * noteStr.length()) / 2);
+    int xOffset = (display->width() / 6) - ((textSize * 5 * noteStr.length()) / 2);
     display->setCursor(xOffset, (16 * textSize) + 10);
     display->setFont(&FreeSansBold12pt7b);
     if(inTune)
@@ -153,12 +154,21 @@ void Tuner::displayTuning(float hz)
         //if we're in tune we start on a white background and draw inverse text
         display->fillScreen(SSD1306_WHITE);
         display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-        display->println(noteStr);
+        display->print(noteStr);
+        // draw the hz readout
+        display->setFont(nullptr);
+        display->setTextSize(1);
+        display->setCursor(display->width() - (6 * hzString.length()) - 5, 10);
+        display->print(hzString);
     }
     else
     {
         display->setTextColor(SSD1306_WHITE);
-        display->println(noteStr);
+        display->print(noteStr);
+        display->setFont(nullptr);
+        display->setTextSize(1);
+        display->setCursor(display->width() - (6 * hzString.length()) - 5, 10);
+        display->print(hzString);
         //now draw the graphic bar to indicate how out of tune we are
         float fBarLength = (float)std::abs(tuningError) / 100.0f;
         const int16_t barHeight = 8;

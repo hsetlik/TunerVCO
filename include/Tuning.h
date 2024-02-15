@@ -15,7 +15,7 @@
 #define OLED_RESET -1
 
 #define FRAME_INTERVAL 30 // length of time between screen updates in ms
-#define RING_BUFFER_SIZE 256 // how many rising edges we keep track of
+#define RING_BUFFER_SIZE 250 // how many rising edges we keep track of
 
 #define TOLERANCE_CENTS 5 // how close we have to be to the fundamental to count as "in tune" 
 
