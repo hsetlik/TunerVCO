@@ -82,7 +82,6 @@ void Tuner::tick()
     //step 2: update the screen if needed
     if(now - prevUpdateMs > FRAME_INTERVAL)
     {
-        prevFrameLength = now - prevUpdateMs;
         prevUpdateMs = now;
         float pitch = currentPitchHz();
         displayTuning(pitch);
@@ -120,17 +119,17 @@ int Tuner::tuningErrorCents(Note* target, float hz)
         int higherNote = std::min({target->midiNum + 1, NUM_NOTES - 1});
         Note* upper = &allNotes[higherNote];
         float semitoneHz = upper->pitch - target->pitch;
-        float fError = semitoneHz / (hz - target->pitch);
-        return (int)fError * 100.0f;
+        float fError = (hz - target->pitch) / semitoneHz;
+        return (int)(fError * 100.0f);
     }
     else if(hz < target->pitch) // if we're flat
     {
         int lowerNote = std::max({target->midiNum - 1, 0});
         Note* lower = &allNotes[lowerNote];
         float semitoneHz = target->pitch - lower->pitch;
-        float fError = semitoneHz / (target->pitch - hz);
-        return (int)fError * -100.0f; //flipping the sign here so we can draw the tuning bar the right direction
-    }
+        float fError = (target->pitch - hz) / semitoneHz;
+        return (int)(fError * -100.0f);//flipping the sign here so we can draw the tuning bar the right direction
+   }
     return 0;
 }
 
@@ -143,22 +142,24 @@ void Tuner::displayTuning(float hz)
     const bool inTune = std::abs(tuningError) <= TOLERANCE_CENTS;
     //step 2: update the display
     display->clearDisplay();
-    auto str = String(hz);
-    display->setTextSize(3);
-    display->setCursor(0, 0);
+    auto freqStr = String(hz);
+    auto noteStr = stringForNoteName(nearest->name);
+    const int textSize = 4;
+    display->setTextSize(textSize);
+    // with the default font each size = 6 px in width and 8 px in height
+    int xOffset = (display->width() / 2) - ((textSize * 6 * noteStr.length()) / 2);
+    display->setCursor(xOffset, 10);
     if(inTune)
     {
         //if we're in tune we start on a white background and draw inverse text
         display->fillScreen(SSD1306_WHITE);
         display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-        display->println(str);
-        display->setTextSize(2);
-        display->println(String(prevFrameLength) + "ms");
+        display->println(noteStr);
     }
     else
     {
         display->setTextColor(SSD1306_WHITE);
-        display->println(str);
+        display->println(noteStr);
         //now draw the graphic bar to indicate how out of tune we are
         float fBarLength = (float)std::abs(tuningError) / 100.0f;
         const int16_t barHeight = 8;
@@ -166,14 +167,12 @@ void Tuner::displayTuning(float hz)
         int16_t y = display->height() - barHeight;
         int16_t h = barHeight;
         int16_t center = display->width() / 2;
-        int16_t w = (int16_t)(fBarLength * (float)center);
+        int16_t w = (int16_t)(fBarLength * (float)display->width());
         if(tuningError > 0)
             x = center;
         else
             x = center - w;
         display->fillRect(x, y, w, h, SSD1306_WHITE);
-        display->setTextSize(2);
-        display->println(String(prevFrameLength) + "ms");
     }
     display->display();
 }
