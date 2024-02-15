@@ -14,10 +14,14 @@
 #define OLED_ADDR 0x3C //I2C address
 #define OLED_RESET -1
 
-#define FRAME_INTERVAL 30 // length of time between screen updates in ms
-#define RING_BUFFER_SIZE 250 // how many rising edges we keep track of
+#define FRAME_INTERVAL 42 // length of time between screen updates in ms
 
-#define TOLERANCE_CENTS 5 // how close we have to be to the fundamental to count as "in tune" 
+// How many rising edges we keep track of to calculate the frequency. 
+// This is a tradeoff between responsiveness and precision
+// at lower frequencies. Between 200 and 300 works best IMO.
+#define RING_BUFFER_SIZE 220 
+
+#define TOLERANCE_CENTS 4 // how close we have to be to the fundamental to count as "in tune" 
 
 #define NUM_NOTES 128
 #define SEMITONE_RATIO 1.05946309436f
