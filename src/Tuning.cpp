@@ -1,4 +1,6 @@
 #include "Tuning.h"
+
+//======================
 EdgeBuffer::EdgeBuffer() : head(0)
 {
 
@@ -27,30 +29,59 @@ Tuner::~Tuner()
     delete display;
 }
 
+String Tuner::stringForNoteName(NoteName n)
+{
+    const String noteNames[] = 
+    {
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B"
+    };
+    return noteNames[(int)n];
+}
 void Tuner::init()
 {
+    //initialize the display
     display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
     if(!display->begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
         Serial.println(F("SSD1306 allocation failed"));
     }
+    //calculate the note pitches
+    for(int i = 0; i < NUM_NOTES; i++)
+    {
+        auto& note = allNotes[i];
+        float fNum = (float)i - 69.0f;
+        note.pitch = 440.0f * std::pow(SEMITONE_RATIO, fNum);
+        note.name = (NoteName)(i % 12);
+        note.midiNum = i;
+    }
 }
+
 void Tuner::tick()
 {
-    //step 1: check for new resing edges
+    //step 1: check for new rising edges
     bool currentLevel = digitalRead(TUNE_PIN);
-    unsigned long now = millis();
     if(currentLevel && !prevLevel) // check for the rising edge
     {
         buf.push(micros());
     }
+    unsigned long now = millis();
     prevLevel = currentLevel;
     //step 2: update the screen if needed
     if(now - prevUpdateMs > FRAME_INTERVAL)
     {
         prevUpdateMs = now;
         float pitch = currentPitchHz();
-        //TODO: update the screen here
+        displayTuning(pitch);
     }
 }
 
@@ -63,4 +94,80 @@ float Tuner::currentPitchHz()
         sum += diff / 1000000.0f; //convert from microseconds to seconds
     }
     return (float)RING_BUFFER_SIZE / sum;
+}
+
+Note* Tuner::nearestNote(float hz)
+{
+    float prevDistance = 500000.0f;
+    for(int i = 1; i < NUM_NOTES; i++)
+    {
+        float currentDistance = std::fabs(allNotes[i].pitch - hz);
+        if(currentDistance >= prevDistance)
+            return &allNotes[i - 1];
+        prevDistance = currentDistance;    
+    }
+    Serial.println("No note found!! Shouldn't be getting here!!");
+    return &allNotes[0];
+}
+
+int Tuner::tuningErrorCents(Note* target, float hz)
+{
+    if (hz > target->pitch) // if we're sharp
+    {
+        int higherNote = std::min({target->midiNum + 1, NUM_NOTES - 1});
+        Note* upper = &allNotes[higherNote];
+        float semitoneHz = upper->pitch - target->pitch;
+        float fError = semitoneHz / (hz - target->pitch);
+        return (int)fError * 100.0f;
+    }
+    else if(hz < target->pitch) // if we're flat
+    {
+        int lowerNote = std::max({target->midiNum - 1, 0});
+        Note* lower = &allNotes[lowerNote];
+        float semitoneHz = target->pitch - lower->pitch;
+        float fError = semitoneHz / (target->pitch - hz);
+        return (int)fError * -100.0f;
+    }
+    return 0;
+}
+
+
+void Tuner::displayTuning(float hz)
+{
+    //step 1: grip the info we need to display
+    Note* nearest = nearestNote(hz);
+    int tuningError = tuningErrorCents(nearest, hz);
+    const bool inTune = std::abs(tuningError) <= TOLERANCE_CENTS;
+    //step 2: update the display
+    display->clearDisplay();
+    auto str = stringForNoteName(nearest->name);
+    display->setTextSize(4);
+    display->setCursor(0, 0);
+    if(inTune)
+    {
+        //if we're in tune we start on a white background and draw inverse text
+        display->fillScreen(SSD1306_WHITE);
+        display->setTextColor(SSD1306_BLACK, SSD1306_WHITE);
+        display->println(str);
+    }
+    else
+    {
+        display->setTextColor(SSD1306_WHITE);
+        display->println(str);
+        //now draw the graphic bar to indicate how out of tune we are
+        float fBarLength = (float)std::abs(tuningError) / 100.0f;
+
+        const int16_t barHeight = 8;
+        int16_t x; 
+        int16_t y = display->height() - barHeight;
+        int16_t h = barHeight;
+        int16_t center = display->width() / 2;
+        int16_t w = (int16_t)(fBarLength * (float)center);
+        if(tuningError > 0)
+            x = center;
+        else
+            x = center - w;
+        display->fillRect(x, y, w, h, SSD1306_WHITE);
+    }
+    display->display();
 }
